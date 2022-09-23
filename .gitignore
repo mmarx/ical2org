@@ -1,0 +1,7 @@
+*~
+#*#
+flycheck_*.el
+.projectile
+/.direnv/
+/target/
+*.rs.bk
