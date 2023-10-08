@@ -152,7 +152,9 @@ impl Converter {
             rrule.push(ONCE.to_string());
         }
 
-        let rrule_string = rrule.join("\n");
+        let rrule_string = rrule
+            .join("\n")
+            .replace("W. Europe Standard Time", "Europe/Berlin"); // fix for buggy calendar entries
 
         log::debug!("dtstart: {dtstart:?}");
         log::debug!("constructed rrule: {rrule_string:?}");
