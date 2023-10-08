@@ -2,11 +2,8 @@
   description = "basic rust template";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs = {
@@ -16,39 +13,53 @@
     };
   };
 
-  outputs = {
-    self,
-    utils,
-    ...
-  } @ inputs:
+  outputs = { self, utils, ... }@inputs:
     utils.lib.mkFlake {
       inherit self inputs;
-      channels.nixpkgs.overlaysBuilder = channels: [inputs.rust-overlay.overlays.rust-overlay];
-      channels.nixpkgs-unstable.overlaysBuilder = channels: [inputs.rust-overlay.overlays.rust-overlay];
+      channels.nixpkgs.overlaysBuilder = channels:
+        [ inputs.rust-overlay.overlays.rust-overlay ];
 
-      outputsBuilder = channels: {
-        devShells.default = channels.nixpkgs.mkShell {
-          RUST_LOG = "debug";
-          RUST_BACKTRACE = 1;
-          shellHook = ''
-            export PATH=''${HOME}/.cargo/bin''${PATH+:''${PATH}}
-          '';
-          buildInputs = [
-            (channels.nixpkgs.rust-bin.selectLatestNightlyWith
-              (toolchain:
-                toolchain.default.override {
-                  extensions = ["rust-src" "miri"];
-                }))
-            channels.nixpkgs-unstable.rust-analyzer
-            channels.nixpkgs.cargo-audit
-            channels.nixpkgs.cargo-license
-            channels.nixpkgs.cargo-tarpaulin
-            channels.nixpkgs.cargo-kcov
-            channels.nixpkgs.valgrind
-            channels.nixpkgs.gnuplot
-            channels.nixpkgs.kcov
-          ];
+      outputsBuilder = channels:
+        let
+          pkgs = channels.nixpkgs;
+          toolchain =
+            pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          platform = pkgs.makeRustPlatform {
+            cargo = toolchain;
+            rustc = toolchain;
+          };
+          cargoMeta =
+            (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
+        in {
+          packages = rec {
+            ical2org = platform.buildRustPackage {
+              pname = "ical2org";
+              inherit (cargoMeta) version;
+
+              src = ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+
+              nativeBuildInputs =
+                [ toolchain platform.cargoBuildHook platform.cargoCheckHook ];
+
+              meta = {
+                inherit (cargoMeta) description homepage;
+                license = [ pkgs.lib.licenses.gpl3Plus ];
+              };
+            };
+            default = ical2org;
+          };
+
+          devShells.default = channels.nixpkgs.mkShell {
+            RUST_LOG = "debug";
+            RUST_BACKTRACE = 1;
+            buildInputs = [
+              toolchain
+              pkgs.rust-analyzer
+              pkgs.cargo-audit
+              pkgs.cargo-license
+            ];
+          };
         };
-      };
     };
 }
