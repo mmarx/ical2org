@@ -132,16 +132,19 @@ impl Converter {
         let mut dtstart = String::new();
 
         for property in event.properties.iter() {
-            let name = property.name.as_str();
-
-            if name == "RRULE" || name == "RDATE" {
+            if property.name == "RRULE" || property.name == "RDATE" {
                 recurs = true;
-            } else if name == "DTSTART" {
+            } else if property.name == "DTSTART" {
                 dtstart = property.value.clone().expect("event should have a DTSTART");
             }
 
-            if RR_PROPERTIES.contains(&name) {
+            if self.rr_props.contains(&property.name) {
                 rrule.push(Self::format_property(property))
+            }
+
+            if property.name == "ATTENDEE" && self.has_declined(property) {
+                log::debug!("ignoring declined event");
+                return Ok(());
             }
         }
 
@@ -332,6 +335,27 @@ impl Converter {
             .dates
             .first()
             .expect("should not be empty"))
+    }
+
+    fn has_declined(&self, property: &Property) -> bool {
+        let mut declined = false;
+        let mut is_self = false;
+
+        if let Some(parameters) = &property.params {
+            for (parameter, values) in parameters {
+                if parameter == "CN" {
+                    for value in values {
+                        if self.emails.contains(value) {
+                            is_self = true;
+                        }
+                    }
+                } else if parameter == "PARTSTAT" && values.contains(&"DECLINED".to_string()) {
+                    declined = true;
+                }
+            }
+        }
+
+        declined && is_self
     }
 }
 
