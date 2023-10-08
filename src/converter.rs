@@ -12,7 +12,7 @@ use ical::{
 };
 use rrule::{RRuleSet, Tz};
 
-use crate::datetime::org_datetime;
+use crate::datetime::{is_midnight, org_date, org_datetime};
 
 const ONCE: &str = "RRULE:FREQ=DAILY;COUNT=1";
 const NO_TITLE: &str = "(No title)";
@@ -199,6 +199,7 @@ impl Converter {
         let mut dtend = None;
         let mut duration = None;
         let mut recurs = false;
+        let mut whole_day = false;
 
         for property in event.properties.iter() {
             match property.name.as_str() {
@@ -215,6 +216,12 @@ impl Converter {
                 }
                 "RRULE" => recurs = true,
                 _ => (),
+            }
+        }
+
+        if let Some(duration) = duration {
+            if let Some(start) = dtstart {
+                dtend = Some(start + Duration::from_std(duration.into())?)
             }
         }
 
@@ -239,13 +246,46 @@ impl Converter {
 
         // timestamps
 
-        if let (Some(start), Some(end)) = (dtstart, dtend) {
-            writeln!(
-                org_file,
-                "  {}--{}",
-                org_datetime(start, &self.tz),
-                org_datetime(end, &self.tz)
-            )?;
+        if let (Some(mut start), Some(mut end)) = (dtstart, dtend) {
+            let duration = end - start;
+
+            if recurs {
+                start = *date;
+                end = start + duration;
+            }
+
+            if is_midnight(start.time()) && is_midnight(end.time()) {
+                // whole-day event
+                whole_day = true;
+            }
+
+            if is_midnight(end.time()) && duration == Duration::days(1) {
+                // single-day event
+                writeln!(
+                    org_file,
+                    "  {}",
+                    if whole_day {
+                        org_date(start, &self.tz)
+                    } else {
+                        org_datetime(start, &self.tz)
+                    }
+                )?;
+            } else {
+                writeln!(
+                    org_file,
+                    "  {}--{}",
+                    if whole_day {
+                        org_date(start, &self.tz)
+                    } else {
+                        org_datetime(start, &self.tz)
+                    },
+                    if whole_day {
+                        org_date(end, &self.tz)
+                    } else {
+                        org_datetime(end, &self.tz)
+                    }
+                )?;
+            }
         }
 
         // description

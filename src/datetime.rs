@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
-use chrono::{DateTime, TimeZone};
+use chrono::{DateTime, NaiveTime, TimeZone, Timelike};
 
+/// Formats a datetime for org agendas, using the given timezone.
 pub fn org_datetime<Tz, Ty>(datetime: DateTime<Tz>, timezone: &Ty) -> String
 where
     Ty: TimeZone,
@@ -14,6 +15,7 @@ where
         .to_string()
 }
 
+/// Formats a date for org agendas, using the given timezone.
 pub fn org_date<Tz, Ty>(date: DateTime<Tz>, timezone: &Ty) -> String
 where
     Ty: TimeZone,
@@ -23,6 +25,11 @@ where
     date.with_timezone(timezone)
         .format("<%Y-%m-%d %a>")
         .to_string()
+}
+
+/// Checks whether the given time denotes midnight.
+pub fn is_midnight(time: NaiveTime) -> bool {
+    time.hour() == 0 && time.minute() == 0 && time.second() == 0 && time.nanosecond() == 0
 }
 
 #[cfg(test)]
