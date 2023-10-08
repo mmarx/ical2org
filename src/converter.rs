@@ -10,7 +10,8 @@ use ical::{
     property::Property,
     IcalParser,
 };
-use rrule::{RRuleSet, Tz};
+use regex::Regex;
+use rrule::{RRuleError, RRuleSet, Tz};
 
 use crate::datetime::{is_midnight, org_date, org_datetime};
 
@@ -152,12 +153,26 @@ impl Converter {
             rrule.push(ONCE.to_string());
         }
 
-        let rrule_string = rrule
+        let mut rrule_string = rrule
             .join("\n")
             .replace("W. Europe Standard Time", "Europe/Berlin"); // fix for buggy calendar entries
 
         log::debug!("dtstart: {dtstart:?}");
         log::debug!("constructed rrule: {rrule_string:?}");
+
+        if let Err(RRuleError::ValidationError(_)) = rrule_string.parse::<RRuleSet>() {
+            let re = Regex::new(r"(?<pre>(^|\n)RRULE:.*?)(?<until>UNTIL=\d+)(?<post>(;|\n|$))")
+                .expect("should parse");
+            rrule_string = re
+                .replace(&rrule_string, r"${pre}${until}T000000Z${post}")
+                .to_string();
+            let re = Regex::new(r"(?<pre>(^|\n)RRULE:.*?)(?<until>UNTIL=\d+T\d+)(?<post>(;|\n|$))")
+                .expect("should parse");
+            rrule_string = re
+                .replace(&rrule_string, r"${pre}${until}Z${post}")
+                .to_string();
+            log::debug!("fixed rrule: {rrule_string:?}");
+        }
 
         match rrule_string.parse::<RRuleSet>() {
             Ok(rrule_set) => {

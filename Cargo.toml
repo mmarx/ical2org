@@ -17,5 +17,6 @@ env_logger = "0.10.0"
 ical = "0.8.0"
 iso8601 = { version = "0.6.1", features = ["chrono"] }
 log = { version = "0.4.20", features = [ "max_level_debug", "release_max_level_info" ] }
+regex = "1.9.6"
 rrule = "0.11.0"
 test-log = "0.2.12"

@@ -297,6 +297,7 @@ dependencies = [
  "ical",
  "iso8601",
  "log",
+ "regex",
  "rrule",
  "test-log",
 ]
