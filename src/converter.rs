@@ -20,6 +20,10 @@ const NO_TITLE: &str = "(No title)";
 const RECUR_TAG: &str = ":RECURRING:";
 const RR_PROPERTIES: [&str; 5] = ["RRULE", "EXRULE", "DTSTART", "EXDATE", "RDATE"];
 
+fn unescape_comma(s: String) -> String {
+    s.replace(r"\,", ",")
+}
+
 /// The main event converter
 pub struct Converter {
     /// Days to the left and right of the current day.
@@ -223,9 +227,9 @@ impl Converter {
 
         for property in event.properties.iter() {
             match property.name.as_str() {
-                "SUMMARY" => summary = property.value.clone(),
-                "LOCATION" => location = property.value.clone(),
-                "DESCRIPTION" => description = property.value.clone(),
+                "SUMMARY" => summary = property.value.clone().map(unescape_comma),
+                "LOCATION" => location = property.value.clone().map(unescape_comma),
+                "DESCRIPTION" => description = property.value.clone().map(unescape_comma),
                 "DTSTART" => dtstart = Some(Self::datetime_from_property(property)?),
                 "DTEND" => dtend = Some(Self::datetime_from_property(property)?),
                 "DURATION" => {
