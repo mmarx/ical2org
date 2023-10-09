@@ -30,7 +30,7 @@
           };
           cargoMeta =
             (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
-        in {
+        in rec {
           packages = rec {
             ical2org = platform.buildRustPackage {
               pname = "ical2org";
@@ -48,6 +48,54 @@
               };
             };
             default = ical2org;
+          };
+
+          checks = let
+            runCargo' = name: env: buildCommand:
+              pkgs.stdenv.mkDerivation ({
+                preferLocalBuild = true;
+                allowSubstitutes = false;
+
+                RUSTFLAGS = "-Dwarnings";
+                RUSTDOCFLAGS = "-Dwarnings";
+
+                src = ./.;
+                cargoDeps =
+                  platform.importCargoLock { lockFile = ./Cargo.lock; };
+
+                nativeBuildInputs = [ toolchain ]
+                  ++ (with platform; [ cargoSetupHook pkgs.python3 ]);
+
+                inherit name;
+
+                buildPhase = ''
+                  runHook preBuild
+                  mkdir $out
+                  ${buildCommand}
+                  runHook postBuild
+                '';
+              } // env);
+            runCargo = name: runCargo' name { };
+          in {
+            inherit (packages) ical2org;
+
+            devshell = devShells.default;
+
+            clippy = runCargo "nemo-check-clippy" ''
+              cargo clippy --all-targets
+            '';
+
+            doc = runCargo "nemo-check-docs" ''
+              cargo doc --workspace
+            '';
+
+            fmt = runCargo "nemo-check-formatting" ''
+              cargo fmt --all -- --check
+            '';
+
+            test = runCargo "nemo-check-tests" ''
+              cargo test
+            '';
           };
 
           devShells.default = channels.nixpkgs.mkShell {
