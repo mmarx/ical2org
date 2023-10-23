@@ -295,6 +295,8 @@ impl Converter {
                     }
                 )?;
             } else {
+                end -= Duration::days(1);
+
                 writeln!(
                     org_file,
                     "  {}--{}",
