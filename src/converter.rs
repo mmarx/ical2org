@@ -295,7 +295,9 @@ impl Converter {
                     }
                 )?;
             } else {
-                end -= Duration::days(1);
+                if whole_day {
+                    end -= Duration::days(1);
+                }
 
                 writeln!(
                     org_file,
