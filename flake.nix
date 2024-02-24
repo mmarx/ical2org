@@ -81,19 +81,19 @@
 
             devshell = devShells.default;
 
-            clippy = runCargo "nemo-check-clippy" ''
+            clippy = runCargo "ical2org-check-clippy" ''
               cargo clippy --all-targets
             '';
 
-            doc = runCargo "nemo-check-docs" ''
+            doc = runCargo "ical2org-check-docs" ''
               cargo doc --workspace
             '';
 
-            fmt = runCargo "nemo-check-formatting" ''
+            fmt = runCargo "ical2org-check-formatting" ''
               cargo fmt --all -- --check
             '';
 
-            test = runCargo "nemo-check-tests" ''
+            test = runCargo "ical2org-check-tests" ''
               cargo test
             '';
           };
