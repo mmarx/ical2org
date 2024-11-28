@@ -1,15 +1,12 @@
 {
-  description = "basic rust template";
+  description = "ical2org - convert ical calenders into org agendas";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "utils/flake-utils";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
