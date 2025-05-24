@@ -2,7 +2,7 @@
   description = "ical2org - convert ical calenders into org agendas";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
