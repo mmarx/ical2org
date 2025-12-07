@@ -46,6 +46,8 @@
                 cargo-audit
                 cargo-edit
                 cargo-license
+                clippy
+                rustfmt
                 rustc
                 rust-analyzer
                 ;
