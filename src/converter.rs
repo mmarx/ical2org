@@ -355,6 +355,7 @@ impl Converter {
 
         Ok(*[ONCE.to_string(), Self::format_property(&prop)]
             .join("\n")
+            .replace("W. Europe Standard Time", "Europe/Berlin") // fix for buggy calendar entries
             .parse::<RRuleSet>()?
             .all(1)
             .dates
