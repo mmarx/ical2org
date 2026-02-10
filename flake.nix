@@ -14,22 +14,32 @@
         cargoMeta = (fromTOML (builtins.readFile ./Cargo.toml)).package;
         pkgs = inputs.nixpkgs.legacyPackages;
         lib = pkgs.lib;
+
+        pkg =
+          {
+            rustPlatform,
+            cargoMeta,
+            lib,
+            ...
+          }:
+
+          rustPlatform.buildRustPackage {
+            pname = "ical2org";
+            inherit (cargoMeta) version;
+
+            src = ./.;
+            cargoLock.lockFile = ./Cargo.lock;
+
+            meta = {
+              inherit (cargoMeta) description homepage;
+              license = [ lib.licenses.gpl3Plus ];
+            };
+          };
       in
       {
         packages =
           let
-            ical2org = pkgs.rustPlatform.buildRustPackage {
-              pname = "ical2org";
-              inherit (cargoMeta) version;
-
-              src = ./.;
-              cargoLock.lockFile = ./Cargo.lock;
-
-              meta = {
-                inherit (cargoMeta) description homepage;
-                license = [ lib.licenses.gpl3Plus ];
-              };
-            };
+            ical2org = pkgs.callPackage pkg { inherit cargoMeta; };
           in
           {
             inherit ical2org;
@@ -38,7 +48,7 @@
 
         overlays =
           let
-            ical2org = final: prev: inputs.self.packages.ical2org;
+            ical2org = final: prev: final.callPackage pkg { inherit cargoMeta; };
           in
           {
             inherit ical2org;
